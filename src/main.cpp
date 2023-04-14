@@ -1,28 +1,64 @@
 #include <Arduino.h>
-
-
 #include "wifi_cred.h"
 #include "main.h"
+#include <Firebase_ESP_Client.h>
+
+//Provide the token generation process info.
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
+
+#define FIREBASE_API_KEY ""
+#define FIREBASE_DB "" 
 
 OV2640 cam;
 
+// Define Firebase Data object
+FirebaseData fbdo;
+
+FirebaseAuth auth;
+FirebaseConfig config;
+
+bool signupOK = false;
+
 void setup() {
+  //ESP.restart();
   // put your setup code here, to run once:
   Serial.begin(115200);
 
   cam.init(esp32cam_aithinker_config);
-
   connectToWifi();
+  //initRTSP();
 
-  initRTSP();
+  config.api_key = FIREBASE_API_KEY;
+  config.database_url = FIREBASE_DB;
+
+  /* Sign up */
+  if (Firebase.signUp(&config, &auth, "", "")){
+    Serial.println("ok");
+    signupOK = true;
+  }
+  else{
+    Serial.printf("%s\n", config.signer.signupError.message.c_str());
+  }
+
+  config.token_status_callback = tokenStatusCallback;
+
+  Firebase.begin(&config, &auth);
+  
+  Firebase.reconnectWiFi(true);
+
+  if (Firebase.ready() && signupOK && WiFi.status() == WL_CONNECTED) {
+    Firebase.RTDB.setString(&fbdo, "ips/cam32", "10.22.3.175");
+  }
 }
 
-void loop() {
 
+void loop() {
+  
 }
 
 void connectToWifi(void) {
-  WiFi.mode(WIFI_STA);
+  //WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   // Print Wifi ssid
