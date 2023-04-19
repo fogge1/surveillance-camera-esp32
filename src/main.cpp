@@ -11,7 +11,7 @@
 #define FIREBASE_DB "" 
 
 OV2640 cam;
-
+IPAddress ip;
 // Define Firebase Data object
 FirebaseData fbdo;
 
@@ -27,7 +27,7 @@ void setup() {
 
   cam.init(esp32cam_aithinker_config);
   connectToWifi();
-  //initRTSP();
+  initRTSP();
 
   config.api_key = FIREBASE_API_KEY;
   config.database_url = FIREBASE_DB;
@@ -48,8 +48,13 @@ void setup() {
   Firebase.reconnectWiFi(true);
 
   if (Firebase.ready() && signupOK && WiFi.status() == WL_CONNECTED) {
-    Firebase.RTDB.setString(&fbdo, "ips/cam32", "10.22.3.175");
+    String address = "rtsp://" + String(ip[0]) + '.' + \
+    String(ip[1]) + '.' +\
+    String(ip[2]) + '.' +\
+    String(ip[3]);
+    Firebase.RTDB.setString(&fbdo, "ips/cam32", address);
   }
+  
 }
 
 
@@ -58,7 +63,7 @@ void loop() {
 }
 
 void connectToWifi(void) {
-  //WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   // Print Wifi ssid
@@ -74,7 +79,8 @@ void connectToWifi(void) {
     Serial.print(".");
   }
   // Get esp32 ip
-  IPAddress ip = WiFi.localIP();
+  ip = WiFi.localIP();
+
 
   Serial.printf("\nIP Address: ");
   Serial.println(ip);
